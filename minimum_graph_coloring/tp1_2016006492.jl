@@ -1,4 +1,47 @@
 using DelimitedFiles
+using JuMP
+using HiGHS
+
+function minimum_coloring(N, E)
+    # Create optimization model
+    model = Model(optimizer_with_attributes(HiGHS.Optimizer))
+    set_silent(model)
+
+    # Binary decision variables indicating whether each vertex is colored with each color
+    @variable(model, 0 <= x[1:N, 1:N] <= 1, Bin)
+
+    # Binary variable: represent if color was used
+    @variable(model, y[1:N], Bin)
+
+    # Constraint: each vertex is assigned to exactly one color
+    for i in 1:N
+        @constraint(model, sum(x[i, j] for j in 1:N) == 1)
+    end
+    
+    # Constraint: adjacent vertices cannot have the same color
+    for (v1, v2) in E
+        for k in 1:N
+            @constraint(model, x[v1, k] + x[v2, k] <= 1)
+        end
+    end
+
+    # Constraint: link y[j] to x[i, j] to represent if color j is used
+    for j in 1:N
+        @constraint(model, sum(x[i, j] for i in 1:N) <= N * y[j])
+    end
+
+    # Objective: maximize the total number of colors used
+    @objective(model, Min, sum(y[j] for j in 1:N))
+
+    # Solve the optimization problem
+    optimize!(model)
+
+     # Extract the solution
+     solution = objective_value(model)
+
+     return solution
+end
+
 
 function dsatur(N, E)
     degrees = zeros(Int, N)  # Array to store the degree of each vertex
@@ -57,42 +100,6 @@ function dsatur(N, E)
     return num_colors
 end
 
-using JuMP
-using HiGHS
-
-function minimum_colors(N, E)
-    # Create optimization model
-    model = Model(optimizer_with_attributes(HiGHS.Optimizer))
-    set_silent(model)
-   
-    @variable(model, x[1:N, 1:N], Bin)  # Binary variable representing color of each vertex
-    
-    # Add constraint: each vertex must have exactly one color
-    for i in 1:N
-        @constraint(model, sum(x[i, j] for j in 1:N) == 1)
-    end
-
-    # Add constraint: adjacent vertices cannot have the same color
-    for (u, v) in E
-        @constraint(model, x[u, v] + x[v, u] <= 1)
-    end
-
-    # Minimize the number of colors used
-    @objective(model, Min, sum(x))
-
-    # Solve the optimization problem
-    optimize!(model)
-
-    # Extract the solution
-    num_colors = objective_value(model)
-    
-    for row in eachrow(value.(x))
-        println(join(row, "\t"))
-    end
-
-    return num_colors
-end
-
 
 # Check args
 if length(ARGS) != 1
@@ -105,7 +112,7 @@ else
     #E = [(Int(row[2]), Int(row[3])) for row in eachrow(data[2:end])]
     E = [(Int(data[i, 2]), Int(data[i, 3])) for i in 2:size(data, 1)]
     
-    solution = minimum_colors(N, E)
+    solution = minimum_coloring(N, E)
     
     println()
     println("TP1 2016006492: $solution")

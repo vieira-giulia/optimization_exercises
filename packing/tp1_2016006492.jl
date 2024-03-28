@@ -2,9 +2,9 @@ using DelimitedFiles
 using JuMP
 using HiGHS
 
+BIN_CAPACITY = 20
 
 function bin_packing(n_bins, w_obj)
-    bin_capacity = 20
     n_obj = length(w_obj)
 
     model = Model(optimizer_with_attributes(HiGHS.Optimizer))
@@ -23,7 +23,7 @@ function bin_packing(n_bins, w_obj)
 
     # Constraint: bins have max capacity
     for j in 1:n_bins
-        @constraint(model, sum(w_obj[i] * x[i, j] for i in 1:n_obj) <= bin_capacity)
+        @constraint(model, sum(w_obj[i] * x[i, j] for i in 1:n_obj) <= BIN_CAPACITY)
     end
 
     # Constraint: link y[j] to x[i, j] to represent if bin j is used

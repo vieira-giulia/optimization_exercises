@@ -2,16 +2,25 @@ using DelimitedFiles
 using JuMP
 using HiGHS
 
+using JuMP
+using HiGHS
+
 function a_coloring(N, E)
     # Create optimization model
     model = Model(optimizer_with_attributes(HiGHS.Optimizer))
     set_silent(model)
 
-    # Binary decision variables indicating whether each vertex is colored with each color
+    # Binary decision variables indicating whether a vertex has a color
     @variable(model, x[1:N, 1:N], Bin)
 
+    # Variable representing color pairs: if color i is near color j 
+    @variable(model, y[1:N, 1:N], Int)
+
+    # Binary variable: represent if color was used
+    @variable(model, z[1:N], Bin)
+
+    # Constraint: each vertex is assigned exactly one color
     for i in 1:N
-        # Constraint: each vertex is assigned exactly one color
         @constraint(model, sum(x[i, j] for j in 1:N) == 1)
     end
 
@@ -22,24 +31,31 @@ function a_coloring(N, E)
         end
     end
 
-    # Objective: minimize the total number of colors used
-    @objective(model, Min, sum(x))
+    # Constraint: A-coloring property
+    for (v1, v2) in E
+        # Increment the corresponding positions in the color pair matrix
+        for i in 1:N
+            for j in 1:N
+                if i != j
+                    @constraint(model, y[i, j] + y[j, i] >= x[v1, i] + x[v2, j])
+                end
+            end
+        end
+    end
+
+    # Constraint: Mark a color as used whenever a vertex is assigned that color
+    for i in 1:N
+        @constraint(model, sum(x[i, j] for j in 1:N) <= N * z[i])
+    end
+
+    # Objective: maximize the total number of colors used
+    @objective(model, Max, sum(z[i] for i in 1:N))
 
     # Solve the optimization problem
     optimize!(model)
 
-    # Extract the colors used for each vertex
-    colors_used = []
-    for i in 1:N
-        color = findfirst(value.(x[i, :]) .> 0)
-        push!(colors_used, color)
-    end
-
-    # Determine the number of distinct colors used
-    solution = length(unique(colors_used))-1
-
-    # Extract the number of colors used
-    #solution = objective_value(model)
+    # Solution
+    solution = objective_value(model)
 
     return solution
 end

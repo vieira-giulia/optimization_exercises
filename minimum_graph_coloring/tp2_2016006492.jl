@@ -39,7 +39,18 @@ function minimum_coloring(N, E)
      # Extract the solution
      solution = objective_value(model)
 
-     return solution
+    # Collect certificate
+    colors = Vector{Vector{Int}}(undef, N)
+    for i in 1:N
+        color = argmax(value.(x[i, :]))
+        if isempty(colors[color])
+            colors[color] = [i]
+        else
+            push!(colors[color], i)
+        end
+    end
+
+     return solution, colors
 end
 
 # Check args
@@ -53,9 +64,8 @@ else
     #E = [(Int(row[2]), Int(row[3])) for row in eachrow(data[2:end])]
     E = [(Int(data[i, 2]), Int(data[i, 3])) for i in 2:size(data, 1)]
 
-    solution = minimum_coloring(N, E)
+    solution, certificate = minimum_coloring(N, E)
 
-    println()
     println("TP1 2016006492: $solution")
 
 end

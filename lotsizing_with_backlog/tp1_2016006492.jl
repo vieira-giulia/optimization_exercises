@@ -7,17 +7,21 @@ function min_cost(T, production_costs, demands, storage_costs, penalties)
     
     # Variables
     @variable(model, 0 <= x[1:T])  # Production of product p at each time t
-    @variable(model, 0 <= y[1:T])  # Early production
-    @variable(model, 0 <= z[1:T])  # Late production
-
+    @variable(model, 0 <= y[1:T])  # Early production: product holding
+    @variable(model, 0 <= z[1:T])  # Late production: backloging
+    
+    sum_x, sum_d = 0, 0
     for t in 1:T
-        # Constraint: total production needs to meet demand
-        @constraint(model, sum(x[t]) == sum(demands[t]))
-
+        sum_x += x[t]
+        sum_d += demands[t]
+        #@constraint(model, x[t] == demands[t])
         if t > 1
-            @constraint(model, x[t] + y[t-1] + z[t-1] == demands[t] + y[t] + z[t])
+            @constraint(model, y[t-1] + x[t] - z[t-1] == demands[t] + y[t] - z[t])
         end
     end
+
+    # Constraint: total production needs to meet demand
+    @constraint(model, sum_x == sum_d)
 
     @objective(model, Min, sum(
         production_costs[i] * x[i] + storage_costs[i] * y[i] + penalties[i] * z[i]

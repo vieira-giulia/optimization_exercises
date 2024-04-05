@@ -12,7 +12,7 @@ function min_cost(T, production_costs, demands, storage_costs, penalties)
     
     sum_x, sum_d = 0, 0
     for t in 1:T
-        sum_x += x[t]
+       sum_x += x[t]
         sum_d += demands[t]
         #@constraint(model, x[t] == demands[t])
         if t > 1
@@ -21,6 +21,9 @@ function min_cost(T, production_costs, demands, storage_costs, penalties)
     end
 
     # Constraint: total production needs to meet demand
+    #for t in 1:T
+    #    @constraint(model, x[t] <= sum(demands[j] for j in t:T))
+    #end
     @constraint(model, sum_x == sum_d)
 
     @objective(model, Min, sum(

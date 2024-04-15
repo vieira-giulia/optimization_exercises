@@ -34,14 +34,14 @@ function min_cost(T, production_costs, demands, storage_costs, penalties)
     optimize!(model)
 
     # Print values of x
-    println("Values of x:")
-    for i in 1:T
-        println("x[$i] = ", value(x[i]))
-    end
+    #println("Values of x:")
+    #for i in 1:T
+    #    println("x[$i] = ", value(x[i]))
+    #end
 
     # Print sum of values of x
-    x_sum = sum(value(x[i]) for i in 1:T)
-    println("Sum of values of x: ", x_sum)
+    #x_sum = sum(value(x[i]) for i in 1:T)
+    #println("Sum of values of x: ", x_sum)
 
     println(sum(values(demands)))
 
